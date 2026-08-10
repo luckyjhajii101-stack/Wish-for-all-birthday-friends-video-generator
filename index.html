@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Birthday Video Maker - Custom Shayari</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #0f0c20;
+            color: #fff;
+            min-height: 100vh;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 100%;
+            max-width: 480px;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(255, 105, 180, 0.3);
+            text-align: center;
+        }
+        h1 { color: #ff69b4; font-size: 22px; margin-bottom: 15px; }
+        label { display: block; text-align: left; margin: 10px 0 4px; font-size: 13px; color: #ddd; }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #ff69b4;
+            background: #1a1530;
+            color: #fff;
+            font-size: 14px;
+        }
+        textarea { height: 70px; resize: none; margin-top: 5px; }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(45deg, #ff1493, #ff69b4);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        #videoContainer { margin-top: 20px; width: 100%; }
+        canvas {
+            width: 100%;
+            height: auto;
+            border-radius: 15px;
+            border: 3px solid #ff69b4;
+            background: #000;
+        }
+        .hidden { display: none; }
+        .download-btn { background: #00d2d3; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🎂 HD Birthday Video Generator 🎉</h1>
+    
+    <label>1. Birthday Person Ka Naam:</label>
+    <input type="text" id="nameInput" placeholder="Naam likhein (e.g. Rahul)">
+    
+    <label>2. Photo Upload Karein:</label>
+    <input type="file" id="photoInput" accept="image/*">
+
+    <label>3. Shayari Chunen Ya Apni Likhein:</label>
+    <select id="shayariSelect" onchange="toggleCustomShayari()">
+        <option value="khushiyon_se_bhara">✨ 1. खुशियों से भरा रहे आपका हर पल...</option>
+        <option value="har_rah_aasan">✨ 2. हर राह आसान हो, हर राह पे खुशियां हो...</option>
+        <option value="dua_mile_bando">✨ 3. दुआ मिले बंदों से, खुशियां मिले जग से...</option>
+        <option value="gulab_ki_tarah">✨ 4. गुलाब की तरह खिलना काम है आपका...</option>
+        <option value="tamannao_se_bhari">✨ 5. तमन्नाओं से भरी हो जिंदगी...</option>
+        <option value="suraj_roshni">✨ 6. सूरज रोशनी लेकर आया, पक्षियों ने गाना गाया...</option>
+        <option value="zindagi_ki_kuch_khaas">✨ 7. ज़िंदगी की कुछ खास दुआएं ले लो हमसे...</option>
+        <option value="mubarak_ho_din">✨ 8. मुबारक हो आपको यह सुहाना दिन खास...</option>
+        <option value="aasan_ho_safar">✨ 9. आसान हो हर सफर, हर मोड़ पर खुशियां हों...</option>
+        <option value="phoolon_ne_amrit">✨ 10. फूलों ने अमृत का जाम भेजा है...</option>
+        <option value="custom">✏️ Apni Khud Ki Shayari Likhein...</option>
+    </select>
+
+    <div id="customShayariDiv" class="hidden">
+        <label>Apni Pasand Ki Shayari Type Karein:</label>
+        <textarea id="customShayariInput" placeholder="Yahan apni shayari likhein..."></textarea>
+    </div>
+
+    <label>4. Piano & Instrumental Tune Chunen:</label>
+    <select id="bgMusic" onchange="changeMusic()">
+        <option value="https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=happy-birthday-to-you-14639.mp3">🎹 1. Soft Birthday Piano Tune</option>
+        <option value="https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a7318a.mp3?filename=happy-birthday-155461.mp3">🎹 2. Classic Birthday Instrumental</option>
+        <option value="https://cdn.pixabay.com/download/audio/2023/04/26/audio_3342e472be.mp3?filename=happy-birthday-148222.mp3">🎸 3. Acoustic Soft Guitar Tune</option>
+        <option value="https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939ff7236.mp3?filename=happy-birthday-jazz-123842.mp3">🎷 4. Smooth Jazz Instrumental</option>
+    </select>
+    
+    <button onclick="startFullVideo()">✨ Make Birthday Video</button>
+
+    <div id="videoContainer" class="hidden">
+        <canvas id="birthdayCanvas" width="720" height="1280"></canvas>
+        <audio id="audioPlayer" loop></audio>
+        <button class="download-btn" onclick="downloadVideo()">📲 Video Download Karein</button>
+    </div>
+</div>
+
+<script>
+let animationId;
+let mediaRecorder;
+let recordedChunks = [];
+
+const shayariList = {
+    'khushiyon_se_bhara': ["खुशियों से भरा रहे आपका हर पल,", "मुस्कुराहट कभी कम ना हो आपके चेहरे पर।", "दुआ करते हैं हम आपके इस जन्मदिन पर,", "हर ख्वाहिश पूरी हो आपकी इस जीवन में!"],
+    'har_rah_aasan': ["हर राह आसान हो, हर राह पे खुशियां हो,", "हर दिन खूबसूरत हो, ऐसा ही पूरा जीवन हो!", "यही दुआ है हमारी आपके जन्मदिन पर,", "जन्मदिन की ढेर सारी शुभकामनाएं!"],
+    'dua_mile_bando': ["दुआ मिले बंदों से, खुशियां मिले जग से,", "साथ मिले अपनों से, रहमत मिले रब से।", "ज़िंदगी में आपको बेपनाह प्यार मिले,", "जन्मदिन मुबारक हो मेरे खास दोस्त!"],
+    'gulab_ki_tarah': ["गुलाब की तरह खिलना काम है आपका,", "दुआओं की छांव देना काम है हमारा।", "हम रहें ना रहें इस दुनिया में,", "हर दिन खुशियाँ पाना मुकद्दर हो आपका!"],
+    'tamannao_se_bhari': ["तमन्नाओं से भरी हो आपकी जिंदगी,", "ख्वाहिशों से भरा हो हर एक पल।", "दामन भी छोटा लगने लगे आपको,", "इतनी खुशियां दे आने वाला कल!"],
+    'suraj_roshni': ["सूरज रोशनी लेकर आया, पक्षियों ने गाना गाया,", "फूलों ने हंस हंस कर बोला,", "मुबारक हो आपका जन्मदिन आया!"],
+    'zindagi_ki_kuch_khaas': ["ज़िंदगी की कुछ खास दुआएं ले लो हमसे,", "जन्मदिन पर कुछ नजराने ले लो हमसे।", "भर दे रंग जो आपके जीवन के पलों में,", "आज वो प्यारी सी मुबारकबाद ले लो हमसे!"],
+    'mubarak_ho_din': ["मुबारक हो आपको यह सुहाना दिन खास,", "हर पल रहे आपके चेहरे पर मिठास।", "खुशियों की कभी कमी ना हो जीवन में,", "हर दिन हो आपके लिए बेहद खास!"],
+    'aasan_ho_safar': ["आसान हो हर सफर, हर मोड़ पर खुशियां हों,", "कामयाबी मिले हर कदम पर आपको।", "मुस्कुराते रहो आप हमेशा,", "जन्मदिन की बहुत-बहुत बधाई हो!"],
+    'phoolon_ne_amrit': ["फूलों ने अमृत का जाम भेजा है,", "तारों ने गगन से सलाम भेजा है।", "खुशियों भरी हो जिंदगी आपकी,", "यह दिल से हमने पैगाम भेजा है!"]
+};
+
+function toggleCustomShayari() {
+    const selected = document.getElementById('shayariSelect').value;
+    const customDiv = document.getElementById('customShayariDiv');
+    if (selected === 'custom') {
+        customDiv.classList.remove('hidden');
+    } else {
+        customDiv.classList.add('hidden');
+    }
+}
+
+function changeMusic() {
+    const audio = document.getElementById('audioPlayer');
+    const musicUrl = document.getElementById('bgMusic').value;
+    audio.src = musicUrl;
+    audio.play();
+}
+
+function startFullVideo() {
+    const name = document.getElementById('nameInput').value.trim();
+    const photoFile = document.getElementById('photoInput').files[0];
+    const musicUrl = document.getElementById('bgMusic').value;
+
+    if (!name || !photoFile) {
+        alert('Kripya Naam aur Photo dono select karein!');
+        return;
+    }
+
+    const audio = document.getElementById('audioPlayer');
+    audio.src = musicUrl;
+    audio.play().catch(() => alert("Music play karne ke liye page par click karein!"));
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            renderFullVideo(name, img);
+        }
+        img.src = e.target.result;
+    }
+    reader.readAsDataURL(photoFile);
+}
+
+function renderFullVideo(name, userImg) {
+    document.getElementById('videoContainer').classList.remove('hidden');
+    const canvas = document.getElementById('birthdayCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    if (animationId) cancelAnimationFrame(animationId);
+
+    // Selected Shayari Get Karein
+    const selectedShayariKey = document.getElementById('shayariSelect').value;
+    let currentShayariLines = [];
+
+    if (selectedShayariKey === 'custom') {
+        const customText = document.getElementById('customShayariInput').value.trim();
+        if (customText) {
+            currentShayariLines = customText.split('\n');
+        } else {
+            currentShayariLines = ["जन्मदिन की ढेर सारी शुभकामनाएं!"];
+        }
+    } else {
+        currentShayariLines = shayariList[selectedShayariKey];
+    }
+
+    let balloons = [];
+    const colors = ['#ff4757', '#ffa502', '#2ed573', '#1e90ff', '#e84393', '#ffd700'];
+    for(let i = 0; i < 20; i++) {
+        balloons.push({
+            x: Math.random() * canvas.width,
+            y: canvas.height + Math.random() * 300,
+            r: Math.random() * 20 + 25,
+            speed: Math.random() * 2 + 1,
+            color: colors[Math.floor(Math.random() * colors.length)]
+        });
+    }
+
+    function drawFrame() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        gradient.addColorStop(0, '#2b0036');
+        gradient.addColorStop(0.5, '#520066');
+        gradient.addColorStop(1, '#11001c');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        balloons.forEach(b => {
+            ctx.beginPath();
+            ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+            ctx.fillStyle = b.color;
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.moveTo(b.x, b.y + b.r);
+            ctx.lineTo(b.x, b.y + b.r + 30);
+            ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            b.y -= b.speed;
+            if (b.y < -50) {
+                b.y = canvas.height + 50;
+                b.x = Math.random() * canvas.width;
+            }
+        });
+
+        const photoWidth = 500;
+        const photoHeight = 500;
+        const photoX = (canvas.width - photoWidth) / 2;
+        const photoY = 150;
+
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 6;
+        ctx.strokeRect(photoX, photoY, photoWidth, photoHeight);
+
+        ctx.drawImage(userImg, photoX, photoY, photoWidth, photoHeight);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 38px Poppins';
+        ctx.textAlign = 'center';
+        ctx.fillText(`🎈 HAPPY BIRTHDAY 🎈`, 360, 720);
+
+        ctx.fillStyle = '#ffd700';
+        ctx.font = 'bold 52px Poppins';
+        ctx.fillText(name.toUpperCase(), 360, 790);
+
+        ctx.fillStyle = '#ff69b4';
+        ctx.font = 'bold 30px Poppins';
+        ctx.fillText("✨ Special Birthday Wish ✨", 360, 860);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '22px Poppins';
+        let startY = 910;
+        currentShayariLines.forEach(line => {
+            ctx.fillText(line, 360, startY);
+            startY += 38;
+        });
+
+        ctx.strokeStyle = '#ff69b4';
+        ctx.lineWidth = 12;
+        ctx.strokeRect(15, 15, canvas.width - 30, canvas.height - 30);
+
+        animationId = requestAnimationFrame(drawFrame);
+    }
+
+    drawFrame();
+}
+
+function downloadVideo() {
+    const canvas = document.getElementById('birthdayCanvas');
+    const stream = canvas.captureStream(30);
+    
+    recordedChunks = [];
+    mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+
+    mediaRecorder.ondataavailable = function(e) {
+        if (e.data.size > 0) recordedChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = function() {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Birthday_Video.webm';
+        a.click();
+    };
+
+    alert('Recording shuru ho gayi hai! 5 second me video save ho jayegi.');
+    mediaRecorder.start();
+    setTimeout(() => {
+        mediaRecorder.stop();
+    }, 5000);
+}
+</script>
+
+</body>
+</html>
