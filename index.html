@@ -278,22 +278,18 @@ function renderFullVideo(name, userImg) {
 
 function downloadVideo() {
     const btn = document.getElementById('downloadBtn');
-    btn.innerText = "⏳ Video Save Ho Rahi Hai...";
+    btn.innerText = "⏳ Saving to Gallery...";
     btn.disabled = true;
 
     const canvas = document.getElementById('birthdayCanvas');
-    const stream = canvas.captureStream(30);
     
+    // Stable Video Stream recording
+    const stream = canvas.captureStream(25);
     recordedChunks = [];
-    
-    // Supported MIME type detect karein
-    let options = {};
-    if (MediaRecorder.isTypeSupported('video/mp4')) {
+
+    let options = { mimeType: 'video/webm' };
+    if (!MediaRecorder.isTypeSupported('video/webm')) {
         options = { mimeType: 'video/mp4' };
-    } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
-        options = { mimeType: 'video/webm;codecs=vp9' };
-    } else if (MediaRecorder.isTypeSupported('video/webm')) {
-        options = { mimeType: 'video/webm' };
     }
 
     try {
@@ -302,36 +298,32 @@ function downloadVideo() {
         mediaRecorder = new MediaRecorder(stream);
     }
 
-    mediaRecorder.ondataavailable = function(e) {
-        if (e.data && e.data.size > 0) recordedChunks.push(e.data);
+    mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) recordedChunks.push(e.data);
     };
 
-    mediaRecorder.onstop = function() {
-        const mimeType = mediaRecorder.mimeType || 'video/webm';
-        const extension = mimeType.includes('mp4') ? 'mp4' : 'webm';
-        
-        const blob = new Blob(recordedChunks, { type: mimeType });
-        const url = URL.createObjectURL(blob);
-        
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = `Birthday_Video.${extension}`;
-        document.body.appendChild(a);
-        a.click();
-        
-        setTimeout(() => {
+    mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' });
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = function() {
+            const base64data = reader.result;
+            const a = document.createElement('a');
+            a.href = base64data;
+            a.download = `Birthday_Wish_${Date.now()}.webm`;
+            document.body.appendChild(a);
+            a.click();
             document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
+
             btn.innerText = "📲 Video Download Karein";
             btn.disabled = false;
-        }, 100);
+        };
     };
 
     mediaRecorder.start();
     setTimeout(() => {
         mediaRecorder.stop();
-    }, 5000);
+    }, 4000);
 }
 </script>
 
