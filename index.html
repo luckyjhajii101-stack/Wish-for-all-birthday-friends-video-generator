@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Birthday Video Maker - Custom Shayari</title>
-    <meta name="google-site-verification" content="RujVkgq1BoppoCDTge3A2JUEksa-lDyJIRTmCDyXvrU" />
+    <title>Birthday Video Maker - Clean HD Layout</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -108,7 +107,7 @@
     <div id="videoContainer" class="hidden">
         <canvas id="birthdayCanvas" width="720" height="1280"></canvas>
         <audio id="audioPlayer" loop></audio>
-        <button class="download-btn" onclick="downloadVideo()">📲 Video Download Karein</button>
+        <button class="download-btn" id="downloadBtn" onclick="downloadVideo()">📲 Video Download Karein</button>
     </div>
 </div>
 
@@ -125,7 +124,7 @@ const shayariList = {
     'tamannao_se_bhari': ["तमन्नाओं से भरी हो आपकी जिंदगी,", "ख्वाहिशों से भरा हो हर एक पल।", "दामन भी छोटा लगने लगे आपको,", "इतनी खुशियां दे आने वाला कल!"],
     'suraj_roshni': ["सूरज रोशनी लेकर आया, पक्षियों ने गाना गाया,", "फूलों ने हंस हंस कर बोला,", "मुबारक हो आपका जन्मदिन आया!"],
     'zindagi_ki_kuch_khaas': ["ज़िंदगी की कुछ खास दुआएं ले लो हमसे,", "जन्मदिन पर कुछ नजराने ले लो हमसे।", "भर दे रंग जो आपके जीवन के पलों में,", "आज वो प्यारी सी मुबारकबाद ले लो हमसे!"],
-    'mubarak_ho_din': ["मुबारक हो आपको यह सुहाना दिन खास,", "हर पल रहे आपके चेहरे पर मिठास।", "खुशियों की कभी कमी ना हो जीवन में,", "हर दिन हो आपके लिए बेहद खास!"],
+    'mubarak_ho_din': ["मुबारक हो आपको यह सुहाना दिन खास,", "हर पल रहे आपके चेहरे पर मिठास।", "खुशियों की कमी कभी ना हो जीवन में,", "हर दिन हो आपके लिए बेहद खास!"],
     'aasan_ho_safar': ["आसान हो हर सफर, हर मोड़ पर खुशियां हों,", "कामयाबी मिले हर कदम पर आपको।", "मुस्कुराते रहो आप हमेशा,", "जन्मदिन की बहुत-बहुत बधाई हो!"],
     'phoolon_ne_amrit': ["फूलों ने अमृत का जाम भेजा है,", "तारों ने गगन से सलाम भेजा है।", "खुशियों भरी हो जिंदगी आपकी,", "यह दिल से हमने पैगाम भेजा है!"]
 };
@@ -159,7 +158,7 @@ function startFullVideo() {
 
     const audio = document.getElementById('audioPlayer');
     audio.src = musicUrl;
-    audio.play().catch(() => alert("Music play karne ke liye page par click karein!"));
+    audio.play().catch(() => {});
 
     const reader = new FileReader();
     reader.onload = function(e) {
@@ -179,7 +178,6 @@ function renderFullVideo(name, userImg) {
     
     if (animationId) cancelAnimationFrame(animationId);
 
-    // Selected Shayari Get Karein
     const selectedShayariKey = document.getElementById('shayariSelect').value;
     let currentShayariLines = [];
 
@@ -236,6 +234,7 @@ function renderFullVideo(name, userImg) {
             }
         });
 
+        // HD Clean Square Photo Frame (No Ring)
         const photoWidth = 500;
         const photoHeight = 500;
         const photoX = (canvas.width - photoWidth) / 2;
@@ -279,6 +278,10 @@ function renderFullVideo(name, userImg) {
 }
 
 function downloadVideo() {
+    const btn = document.getElementById('downloadBtn');
+    btn.innerText = "⏳ Video Save Ho Rahi Hai...";
+    btn.disabled = true;
+
     const canvas = document.getElementById('birthdayCanvas');
     const stream = canvas.captureStream(30);
     
@@ -296,9 +299,11 @@ function downloadVideo() {
         a.href = url;
         a.download = 'Birthday_Video.webm';
         a.click();
+        
+        btn.innerText = "📲 Video Download Karein";
+        btn.disabled = false;
     };
 
-    alert('Recording shuru ho gayi hai! 5 second me video save ho jayegi.');
     mediaRecorder.start();
     setTimeout(() => {
         mediaRecorder.stop();
@@ -307,4 +312,4 @@ function downloadVideo() {
 </script>
 
 </body>
-</html>
+    </html>
